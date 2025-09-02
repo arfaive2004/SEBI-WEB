@@ -94,9 +94,11 @@ export function MainLayout({ children }: { children: ReactNode }) {
             <SidebarGroupLabel>Surveillance</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                  <SidebarMenuButton disabled tooltip="Trade Watchdog">
+                <Link href="/trade-watchdog" passHref>
+                  <SidebarMenuButton isActive={pathname === '/trade-watchdog'} tooltip="Trade Watchdog">
                     <ShieldCheck /><span>Trade Watchdog</span>
                   </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
