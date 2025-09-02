@@ -2,7 +2,6 @@ import { MainLayout } from '@/components/main-layout'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TopClientsCard } from '@/components/dashboard/top-clients-card'
 import { formatCurrency } from '@/lib/utils'
-import { BarChart, Users, UserPlus } from 'lucide-react'
 
 export default function DashboardPage() {
   return (
@@ -16,23 +15,23 @@ export default function DashboardPage() {
           <div className="lg:col-span-3">
             <MetricCard
               title="Total Brokerage"
-              icon={BarChart}
+              icon="BarChart"
               value={formatCurrency(12345678.90)}
               change="+5.2% from last month"
               changeType="increase"
-              valueClassName="text-4xl"
+              valueClassName="text-3xl"
             />
           </div>
           <MetricCard
             title="New Clients"
-            icon={UserPlus}
+            icon="UserPlus"
             value="32"
             change="+3 since yesterday"
             changeType="increase"
           />
           <MetricCard
             title="Active Clients"
-            icon={Users}
+            icon="Users"
             value="1,254"
             change="+12 clients today"
             changeType="increase"
