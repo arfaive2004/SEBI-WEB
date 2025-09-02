@@ -1,0 +1,168 @@
+'use client'
+
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarGroup,
+  SidebarGroupLabel,
+} from '@/components/ui/sidebar'
+import {
+  Home,
+  FileText,
+  DollarSign,
+  ShieldCheck,
+  UserPlus,
+  BarChart2,
+  Settings,
+  Bell,
+} from 'lucide-react'
+import { Icons } from '@/components/icons'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Button } from './ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import type { ReactNode } from 'react'
+
+export function MainLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2">
+            <Icons.logo className="size-8 text-primary" />
+            <h1 className="text-xl font-headline font-semibold">BrokerVerse</h1>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+           <SidebarMenu>
+             <SidebarMenuItem>
+              <Link href="/" passHref>
+                <SidebarMenuButton isActive={pathname === '/'} tooltip="Dashboard">
+                  <Home />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Core Compliance</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <Link href="/onboarding" passHref>
+                  <SidebarMenuButton isActive={pathname === '/onboarding'} tooltip="KYC Form Filler">
+                    <UserPlus /><span>KYC Form Filler</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/margin-report" passHref>
+                  <SidebarMenuButton isActive={pathname === '/margin-report'} tooltip="Daily Report Generator">
+                    <FileText /><span>Daily Report Generator</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/check-funds" passHref>
+                  <SidebarMenuButton isActive={pathname === '/check-funds'} tooltip="Client Funds Checker">
+                    <DollarSign /><span>Client Funds Checker</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Surveillance</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                  <SidebarMenuButton disabled tooltip="Trade Watchdog">
+                    <ShieldCheck /><span>Trade Watchdog</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+          
+          <SidebarGroup>
+            <SidebarGroupLabel>New Core Compliance</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <Link href="/margin-report" passHref>
+                  <SidebarMenuButton isActive={pathname === '/margin-report'} tooltip="Daily Margin Checker">
+                    <BarChart2 /><span>Daily Margin Checker</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton disabled tooltip="Quarterly Settlement">
+                    <FileText /><span>Quarterly Settlement</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <Link href="#" passHref>
+                <SidebarMenuButton tooltip="Settings">
+                  <Settings />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+          <SidebarTrigger className="md:hidden" />
+          <div className="flex items-center gap-4 ml-auto">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="https://picsum.photos/100/100" alt="User" data-ai-hint="person face" />
+                    <AvatarFallback>BR</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
