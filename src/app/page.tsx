@@ -19,20 +19,20 @@ export default function DashboardPage() {
             value={formatCurrency(12345678.90)}
             change="+5.2% from last month"
             changeType="increase"
-            valueClassName="text-6xl"
-          />
-          <MetricCard
-            title="New Clients"
-            icon={UserPlus}
-            value="32"
-            change="+3 since yesterday"
-            changeType="increase"
+            valueClassName="text-4xl"
           />
           <MetricCard
             title="Active Clients"
             icon={Users}
             value="1,254"
             change="+12 clients today"
+            changeType="increase"
+          />
+          <MetricCard
+            title="New Clients"
+            icon={UserPlus}
+            value="32"
+            change="+3 since yesterday"
             changeType="increase"
           />
         </div>
