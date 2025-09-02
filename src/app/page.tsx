@@ -13,15 +13,17 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">Welcome back, here's your brokerage overview for today.</p>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="lg:col-span-3">
+            <MetricCard
+              title="Total Brokerage"
+              icon={BarChart}
+              value={formatCurrency(12345678.90)}
+              change="+5.2% from last month"
+              changeType="increase"
+              valueClassName="text-4xl"
+            />
+          </div>
           <MetricCard
-            title="Total Brokerage"
-            icon={BarChart}
-            value={formatCurrency(12345678.90)}
-            change="+5.2% from last month"
-            changeType="increase"
-            valueClassName="text-3xl"
-          />
-           <MetricCard
             title="New Clients"
             icon={UserPlus}
             value="32"
