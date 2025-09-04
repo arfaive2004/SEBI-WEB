@@ -85,6 +85,9 @@ export function MainLayout({ children }: { children: ReactNode }) {
         title: "Notification Sent",
         description: `Notification sent to Client ${clientId}!`,
       });
+
+      setExpiringClients(prevClients => prevClients.filter(client => client.client_id !== clientId));
+
     } catch (error) {
       console.error('Failed to send notification:', error);
       toast({
@@ -209,7 +212,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuSeparator />
                 {notificationCount > 0 ? (
                   expiringClients.map(client => (
-                    <DropdownMenuItem key={client.client_id} onSelect={() => handleNotifyClient(client.client_id)} className="cursor-pointer">
+                    <DropdownMenuItem key={client.client_id} onSelect={(e) => { e.preventDefault(); handleNotifyClient(client.client_id); }} className="cursor-pointer">
                       Client {client.client_id} expires in {client.days_left} days.
                     </DropdownMenuItem>
                   ))
