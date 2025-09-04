@@ -50,6 +50,9 @@ export function MainLayout({ children }: { children: ReactNode }) {
     async function fetchExpiringClients() {
       try {
         const response = await fetch('http://127.0.0.1:5000/api/kyc/expiring');
+        if (!response.ok) {
+          throw new Error('Failed to fetch');
+        }
         const data = await response.json();
         setExpiringClients(data.expiring_clients || [])
       } catch (error) {
