@@ -38,31 +38,62 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { useToast } from '@/hooks/use-toast'
 
 export function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const { toast } = useToast()
   const [expiringClients, setExpiringClients] = useState<any[]>([])
   const notificationCount = expiringClients.length
 
   useEffect(() => {
     async function fetchExpiringClients() {
       try {
-        // This endpoint is not available in the dev server, so we mock the response
-        // const response = await fetch('http://127.0.0.1:5000/api/kyc/expiring');
-        // const data = await response.json();
+        const response = await fetch('http://127.0.0.1:5000/api/kyc/expiring');
+        const data = await response.json();
+        setExpiringClients(data.expiring_clients || [])
+      } catch (error) {
+        console.error('Failed to fetch expiring clients:', error)
+        // Fallback to mock data if API fails
         const mockData = { expiring_clients: [
             { client_id: 'CL1003', days_left: 2 },
             { client_id: 'CL1015', days_left: 5 },
             { client_id: 'CL1022', days_left: 10 },
         ] }
         setExpiringClients(mockData.expiring_clients)
-      } catch (error) {
-        console.error('Failed to fetch expiring clients:', error)
       }
     }
 
     fetchExpiringClients()
   }, [])
+
+  const handleNotifyClient = async (clientId: string) => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/clients/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      
+      toast({
+        title: "Notification Sent",
+        description: `Notification sent to Client ${clientId}!`,
+      });
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to send notification.",
+      });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -178,7 +209,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuSeparator />
                 {notificationCount > 0 ? (
                   expiringClients.map(client => (
-                    <DropdownMenuItem key={client.client_id}>
+                    <DropdownMenuItem key={client.client_id} onSelect={() => handleNotifyClient(client.client_id)} className="cursor-pointer">
                       Client {client.client_id} expires in {client.days_left} days.
                     </DropdownMenuItem>
                   ))
