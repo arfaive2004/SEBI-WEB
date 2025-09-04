@@ -41,7 +41,8 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 
 export function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const [notificationCount, setNotificationCount] = useState(0)
+  const [expiringClients, setExpiringClients] = useState<any[]>([])
+  const notificationCount = expiringClients.length
 
   useEffect(() => {
     async function fetchExpiringClients() {
@@ -49,8 +50,12 @@ export function MainLayout({ children }: { children: ReactNode }) {
         // This endpoint is not available in the dev server, so we mock the response
         // const response = await fetch('http://127.0.0.1:5000/api/kyc/expiring');
         // const data = await response.json();
-        const mockData = { expiring_clients: new Array(3) }
-        setNotificationCount(mockData.expiring_clients.length)
+        const mockData = { expiring_clients: [
+            { client_id: 'CL1003', days_left: 2 },
+            { client_id: 'CL1015', days_left: 5 },
+            { client_id: 'CL1022', days_left: 10 },
+        ] }
+        setExpiringClients(mockData.expiring_clients)
       } catch (error) {
         console.error('Failed to fetch expiring clients:', error)
       }
@@ -156,15 +161,33 @@ export function MainLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex items-center gap-4 ml-auto">
-            <Button variant="ghost" size="icon" className="relative rounded-full">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                  {notificationCount}
-                </span>
-              )}
-              <span className="sr-only">Notifications</span>
-            </Button>
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative rounded-full">
+                  <Bell className="h-5 w-5" />
+                  {notificationCount > 0 && (
+                    <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                      {notificationCount}
+                    </span>
+                  )}
+                  <span className="sr-only">Notifications</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Expiring KYC</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notificationCount > 0 ? (
+                  expiringClients.map(client => (
+                    <DropdownMenuItem key={client.client_id}>
+                      Client {client.client_id} expires in {client.days_left} days.
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem>No expiring clients</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
