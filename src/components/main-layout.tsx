@@ -143,6 +143,13 @@ export function MainLayout({ children }: { children: ReactNode }) {
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/quarterly-settlement" passHref>
+                  <SidebarMenuButton isActive={pathname === '/quarterly-settlement'} tooltip="Quarterly Settlement">
+                    <FileText /><span>Quarterly Settlement</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
@@ -168,11 +175,6 @@ export function MainLayout({ children }: { children: ReactNode }) {
                     <BarChart2 /><span>Daily Margin Checker</span>
                   </SidebarMenuButton>
                 </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton disabled tooltip="Quarterly Settlement">
-                    <FileText /><span>Quarterly Settlement</span>
-                  </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
