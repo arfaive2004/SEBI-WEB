@@ -24,6 +24,7 @@ import {
   BarChart2,
   Settings,
   Bell,
+  UserX,
 } from 'lucide-react'
 import { Icons } from '@/components/icons'
 import Link from 'next/link'
@@ -39,40 +40,51 @@ import {
 } from './ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import { Skeleton } from './ui/skeleton'
+
+type ExpiringClient = {
+  client_id: string
+  full_name: string
+  kyc_expiry_date: string
+}
 
 export function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { toast } = useToast()
-  const [expiringClients, setExpiringClients] = useState<any[]>([])
+  const [expiringClients, setExpiringClients] = useState<ExpiringClient[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const notificationCount = expiringClients.length
 
   useEffect(() => {
     async function fetchExpiringClients() {
+      setIsLoading(true)
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/kyc/expiring');
+        const response = await fetch('https://sebi-api-rbnmeqkvlq-uc.a.run.app/api/kyc/expiring');
         if (!response.ok) {
-          throw new Error('Failed to fetch');
+          throw new Error('Failed to fetch expiring clients');
         }
         const data = await response.json();
         setExpiringClients(data.expiring_clients || [])
       } catch (error) {
         console.error('Failed to fetch expiring clients:', error)
-        // Fallback to mock data if API fails
-        const mockData = { expiring_clients: [
-            { client_id: 'CL1003', days_left: 2 },
-            { client_id: 'CL1015', days_left: 5 },
-            { client_id: 'CL1022', days_left: 10 },
-        ] }
-        setExpiringClients(mockData.expiring_clients)
+        toast({
+          variant: "destructive",
+          title: "API Error",
+          description: "Could not fetch expiring KYC notifications.",
+        });
+        setExpiringClients([]) // Set to empty on error
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchExpiringClients()
-  }, [])
+  }, [toast])
 
-  const handleNotifyClient = async (clientId: string) => {
+  const handleNotifyClient = async (clientId: string, clientName: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/clients/notify', {
+      const response = await fetch('https://sebi-api-rbnmeqkvlq-uc.a.run.app/api/clients/notify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,9 +96,11 @@ export function MainLayout({ children }: { children: ReactNode }) {
         throw new Error('API request failed');
       }
       
+      const result = await response.json();
+
       toast({
         title: "Notification Sent",
-        description: `Notification sent to Client ${clientId}!`,
+        description: result.message || `Notification sent to ${clientName}!`,
       });
 
       setExpiringClients(prevClients => prevClients.filter(client => client.client_id !== clientId));
@@ -204,25 +218,43 @@ export function MainLayout({ children }: { children: ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
                   <Bell className="h-5 w-5" />
-                  {notificationCount > 0 && (
-                    <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                      {notificationCount}
-                    </span>
+                  {isLoading ? (
+                    <Skeleton className="absolute top-0 right-0 h-5 w-5 rounded-full" />
+                  ) : (
+                    notificationCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                        {notificationCount}
+                      </span>
+                    )
                   )}
                   <span className="sr-only">Notifications</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel>Expiring KYC</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {notificationCount > 0 ? (
+                {isLoading ? (
+                  <div className="p-2 space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                ) : notificationCount > 0 ? (
                   expiringClients.map(client => (
-                    <DropdownMenuItem key={client.client_id} onSelect={(e) => { e.preventDefault(); handleNotifyClient(client.client_id); }} className="cursor-pointer">
-                      Client {client.client_id} expires in {client.days_left} days.
+                    <DropdownMenuItem key={client.client_id} onSelect={(e) => { e.preventDefault(); handleNotifyClient(client.client_id, client.full_name); }} className="cursor-pointer flex justify-between items-center">
+                      <div>
+                        <p className='font-semibold'>{client.full_name}</p>
+                        <p className='text-xs text-muted-foreground'>Expires: {new Date(client.kyc_expiry_date).toLocaleDateString()}</p>
+                      </div>
+                      <Button size="sm" variant="ghost">Notify</Button>
                     </DropdownMenuItem>
                   ))
                 ) : (
-                  <DropdownMenuItem>No expiring clients</DropdownMenuItem>
+                  <DropdownMenuItem className="justify-center text-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2 py-4">
+                      <UserX className="h-8 w-8" />
+                      <span>No expiring clients</span>
+                    </div>
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

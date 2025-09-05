@@ -4,13 +4,13 @@ import { useState, useMemo } from 'react'
 import { ThreeDCard } from '@/components/ui/3d-card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import { Badge } from '../ui/badge'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Loader2, Search, SlidersHorizontal, FileDown } from 'lucide-react'
+import { Loader2, Search, SlidersHorizontal, FileDown, AlertCircle, FileWarning } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '../ui/card'
-import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 type MarginRecord = {
   client_id: string
@@ -21,27 +21,60 @@ type MarginRecord = {
   margin_status: 'OK' | 'issue'
 }
 
-const mockData: MarginRecord[] = [
-    { client_id: 'CL1001', stock: 'RELIANCE', trade_type: 'BUY', margin_required: 50000, margin_available: 60000, margin_status: 'OK' },
-    { client_id: 'CL1002', stock: 'TCS', trade_type: 'SELL', margin_required: 75000, margin_available: 70000, margin_status: 'issue' },
-    { client_id: 'CL1001', stock: 'HDFCBANK', trade_type: 'BUY', margin_required: 120000, margin_available: 150000, margin_status: 'OK' },
-    { client_id: 'CL1003', stock: 'INFY', trade_type: 'BUY', margin_required: 90000, margin_available: 95000, margin_status: 'OK' },
-    { client_id: 'CL1002', stock: 'WIPRO', trade_type: 'SELL', margin_required: 40000, margin_available: 35000, margin_status: 'issue' },
-    { client_id: 'CL1004', stock: 'ICICIBANK', trade_type: 'BUY', margin_required: 80000, margin_available: 80000, margin_status: 'OK' },
-];
-
 export function MarginReportTable() {
     const [isLoading, setIsLoading] = useState(false);
     const [reportData, setReportData] = useState<MarginRecord[]>([]);
     const [clientFilter, setClientFilter] = useState('');
     const [stockFilter, setStockFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [error, setError] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const handleGenerateReport = async () => {
         setIsLoading(true);
-        await new Promise(res => setTimeout(res, 1500));
-        setReportData(mockData);
-        setIsLoading(false);
+        setError(null);
+        try {
+            const response = await fetch('https://sebi-api-rbnmeqkvlq-uc.a.run.app/api/reports/generate-margin-report');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.message || `API Error: ${response.statusText}`);
+            }
+            
+            // Assuming the API returns a CSV file
+            const blob = await response.blob();
+            const text = await blob.text();
+            
+            // Parse CSV
+            const rows = text.split('\n').slice(1); // remove header
+            const data: MarginRecord[] = rows.map(row => {
+                const [client_id, stock, trade_type, margin_required, margin_available, margin_status] = row.split(',');
+                return {
+                    client_id,
+                    stock,
+                    trade_type: trade_type as 'BUY' | 'SELL',
+                    margin_required: parseFloat(margin_required),
+                    margin_available: parseFloat(margin_available),
+                    margin_status: margin_status as 'OK' | 'issue'
+                };
+            }).filter(item => item.client_id); // filter out empty rows
+            
+            setReportData(data);
+            toast({
+                title: "Report Generated",
+                description: "Daily margin report has been successfully generated.",
+            });
+
+        } catch (err: any) {
+            const errorMessage = err.message || 'An unexpected error occurred.';
+            setError(errorMessage);
+            toast({
+                variant: 'destructive',
+                title: 'Report Generation Failed',
+                description: errorMessage,
+            })
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     const filteredData = useMemo(() => {
@@ -54,15 +87,37 @@ export function MarginReportTable() {
         })
     }, [reportData, clientFilter, stockFilter, statusFilter]);
 
-    if(isLoading) {
-        return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+    const downloadCSV = () => {
+        const headers = ['Client ID', 'Stock', 'Trade Type', 'Margin Required', 'Margin Available', 'Status'];
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n"
+            + filteredData.map(e => `${e.client_id},${e.stock},${e.trade_type},${e.margin_required},${e.margin_available},${e.margin_status}`).join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Margin_Report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     if(reportData.length === 0) {
         return (
-            <div className="text-center py-20">
-                <Button size="lg" onClick={handleGenerateReport}>Generate Daily Margin Report</Button>
-                <p className="text-muted-foreground mt-4 text-sm">Click to generate the latest margin report.</p>
+            <div className="text-center py-20 flex flex-col items-center gap-4">
+                {isLoading ? (
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                ) : error ? (
+                    <>
+                        <div className="text-red-500 flex items-center gap-2"><AlertCircle /><span>{error}</span></div>
+                        <Button size="lg" onClick={handleGenerateReport}>Retry</Button>
+                    </>
+                ) : (
+                    <>
+                        <Button size="lg" onClick={handleGenerateReport}>Generate Daily Margin Report</Button>
+                        <p className="text-muted-foreground mt-4 text-sm">Click to generate the latest margin report.</p>
+                    </>
+                )}
             </div>
         )
     }
@@ -95,41 +150,48 @@ export function MarginReportTable() {
                                     <SelectItem value="issue">Issue</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline"><FileDown className="mr-2 h-4 w-4" /> Export</Button>
+                            <Button variant="outline" onClick={downloadCSV}><FileDown className="mr-2 h-4 w-4" /> Export</Button>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Client ID</TableHead>
-                                <TableHead>Stock</TableHead>
-                                <TableHead>Trade Type</TableHead>
-                                <TableHead className="text-right">Margin Required</TableHead>
-                                <TableHead className="text-right">Margin Available</TableHead>
-                                <TableHead className="text-center">Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredData.map((record, index) => (
-                                <TableRow key={index} className={cn(record.margin_status === 'issue' && 'bg-destructive/10 hover:bg-destructive/20')}>
-                                    <TableCell className="font-medium">{record.client_id}</TableCell>
-                                    <TableCell>{record.stock}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={record.trade_type === 'BUY' ? 'secondary' : 'default'} className={cn(record.trade_type === 'BUY' && 'bg-blue-500/20 text-blue-700 border-blue-500/30')}>{record.trade_type}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">{formatCurrency(record.margin_required)}</TableCell>
-                                    <TableCell className="text-right font-mono">{formatCurrency(record.margin_available)}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant={record.margin_status === 'OK' ? 'default' : 'destructive'} className={cn(record.margin_status === 'OK' && 'bg-green-500/20 text-green-700 border-green-500/30')}>
-                                            {record.margin_status}
-                                        </Badge>
-                                    </TableCell>
+                    {filteredData.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client ID</TableHead>
+                                    <TableHead>Stock</TableHead>
+                                    <TableHead>Trade Type</TableHead>
+                                    <TableHead className="text-right">Margin Required</TableHead>
+                                    <TableHead className="text-right">Margin Available</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredData.map((record, index) => (
+                                    <TableRow key={index} className={cn(record.margin_status === 'issue' && 'bg-destructive/10 hover:bg-destructive/20')}>
+                                        <TableCell className="font-medium">{record.client_id}</TableCell>
+                                        <TableCell>{record.stock}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={record.trade_type === 'BUY' ? 'secondary' : 'default'} className={cn(record.trade_type === 'BUY' && 'bg-blue-500/20 text-blue-700 border-blue-500/30')}>{record.trade_type}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(record.margin_required)}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(record.margin_available)}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={record.margin_status === 'OK' ? 'default' : 'destructive'} className={cn(record.margin_status === 'OK' && 'bg-green-500/20 text-green-700 border-green-500/30')}>
+                                                {record.margin_status}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground flex flex-col items-center gap-4">
+                            <FileWarning className="h-10 w-10" />
+                            <p>No records found for the selected filters.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </ThreeDCard>

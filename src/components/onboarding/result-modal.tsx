@@ -16,13 +16,16 @@ type VerificationResult = {
   status: 'success' | 'failed'
   data?: {
     Name: string
-    "Father's Name": string
-    DOB: string
+    "Father's Name"?: string
+    DOB?: string
+    "Date of Birth"?: string
     "PAN Number": string
     Address: string
-    verificationStatus: string
+    verificationStatus?: string
+    "PAN Number (Masked)"?: string
   }
   reason?: string
+  message?: string
 }
 
 type ResultModalProps = {
@@ -56,8 +59,8 @@ export function ResultModal({ result, open, onOpenChange }: ResultModalProps) {
           <DialogTitle className="text-2xl font-headline">{isSuccess ? 'Verification Successful' : 'Verification Failed'}</DialogTitle>
           <DialogDescription>
             {isSuccess
-              ? 'The client has been successfully onboarded.'
-              : result.reason || 'An unknown error occurred.'}
+              ? result.message || 'The client has been successfully onboarded.'
+              : result.reason || result.message || 'An unknown error occurred.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -65,8 +68,8 @@ export function ResultModal({ result, open, onOpenChange }: ResultModalProps) {
           <div className="px-8 text-sm">
             <div className="rounded-lg border bg-background/50 p-4 space-y-2">
                 <div className="flex justify-between"><span className="text-muted-foreground">Name:</span> <span className="font-medium">{result.data.Name}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">PAN:</span> <span className="font-medium font-mono">{result.data['PAN Number']}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Status:</span> <span className="font-medium text-green-600">{result.data.verificationStatus}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">PAN:</span> <span className="font-medium font-mono">{result.data['PAN Number (Masked)'] || result.data['PAN Number']}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">DOB:</span> <span className="font-medium">{result.data.DOB || result.data['Date of Birth']}</span></div>
             </div>
           </div>
         )}
