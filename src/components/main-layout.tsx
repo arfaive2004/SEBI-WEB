@@ -160,13 +160,6 @@ export function MainLayout({ children }: { children: ReactNode }) {
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/quarterly-settlement" passHref>
-                  <SidebarMenuButton isActive={pathname === '/quarterly-settlement'} tooltip="Quarterly Settlement">
-                    <FileText /><span>Quarterly Settlement</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
