@@ -59,8 +59,8 @@ export function ResultModal({ result, open, onOpenChange }: ResultModalProps) {
           <DialogTitle className="text-2xl font-headline">{isSuccess ? 'Verification Successful' : 'Verification Failed'}</DialogTitle>
           <DialogDescription>
             {isSuccess
-              ? result.message || 'The client has been successfully onboarded.'
-              : result.reason || result.message || 'An unknown error occurred.'}
+              ? (result.message || 'The client has been successfully onboarded.')
+              : (result.reason || result.message || 'An unknown error occurred.')}
           </DialogDescription>
         </DialogHeader>
 

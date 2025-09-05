@@ -126,15 +126,19 @@ export function OnboardingForm() {
       });
 
       const responseData: VerificationResult = await response.json()
-
-      if (!response.ok) {
-        throw new Error(responseData.message || responseData.reason || 'Onboarding failed')
-      }
-
+      
       setResult(responseData)
+
+      if (!response.ok || responseData.status === 'failed') {
+        throw new Error(responseData.reason || responseData.message || 'Onboarding failed')
+      }
+      
     } catch (err: any) {
        const errorMessage = err.message || 'An unexpected error occurred.'
-       setResult({ status: 'failed', reason: errorMessage })
+       // The result state is already set from the response, but we can set it here for network errors
+       if(!result) {
+         setResult({ status: 'failed', reason: errorMessage })
+       }
        toast({
         variant: 'destructive',
         title: 'Onboarding Failed',
