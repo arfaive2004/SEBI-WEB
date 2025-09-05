@@ -125,27 +125,36 @@ export function OnboardingForm() {
         body: formData,
       });
 
-      const responseData: VerificationResult = await response.json()
+      const responseData = await response.json();
       
-      setResult(responseData)
+      let apiResult: VerificationResult;
 
-      if (!response.ok || responseData.status === 'failed') {
-        throw new Error(responseData.reason || responseData.message || 'Onboarding failed')
+      // Check for the new error structure { "detail": { ... } }
+      if (responseData.detail && typeof responseData.detail === 'object') {
+        apiResult = responseData.detail;
+      } else {
+        apiResult = responseData;
+      }
+      
+      setResult(apiResult);
+
+      if (!response.ok || apiResult.status === 'failed') {
+        throw new Error(apiResult.reason || apiResult.message || 'Onboarding failed');
       }
       
     } catch (err: any) {
-       const errorMessage = err.message || 'An unexpected error occurred.'
+       const errorMessage = err.message || 'An unexpected error occurred.';
        // The result state is already set from the response, but we can set it here for network errors
        if(!result) {
-         setResult({ status: 'failed', reason: errorMessage })
+         setResult({ status: 'failed', reason: errorMessage });
        }
        toast({
         variant: 'destructive',
         title: 'Onboarding Failed',
         description: errorMessage,
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
